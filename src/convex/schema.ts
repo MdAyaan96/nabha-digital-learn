@@ -5,16 +5,44 @@ import { Infer, v } from "convex/values";
 // default user roles. can add / remove based on the project as needed
 export const ROLES = {
   ADMIN: "admin",
-  USER: "user",
-  MEMBER: "member",
+  TEACHER: "teacher",
+  STUDENT: "student",
 } as const;
 
 export const roleValidator = v.union(
   v.literal(ROLES.ADMIN),
-  v.literal(ROLES.USER),
-  v.literal(ROLES.MEMBER),
+  v.literal(ROLES.TEACHER),
+  v.literal(ROLES.STUDENT),
 );
 export type Role = Infer<typeof roleValidator>;
+
+export const SUBJECTS = {
+  MATH: "math",
+  PHYSICS: "physics", 
+  ENGLISH: "english",
+  BIOLOGY: "biology",
+  PUNJABI: "punjabi",
+} as const;
+
+export const subjectValidator = v.union(
+  v.literal(SUBJECTS.MATH),
+  v.literal(SUBJECTS.PHYSICS),
+  v.literal(SUBJECTS.ENGLISH),
+  v.literal(SUBJECTS.BIOLOGY),
+  v.literal(SUBJECTS.PUNJABI),
+);
+
+export const GRADES = {
+  GRADE_8: "8",
+  GRADE_9: "9", 
+  GRADE_10: "10",
+} as const;
+
+export const gradeValidator = v.union(
+  v.literal(GRADES.GRADE_8),
+  v.literal(GRADES.GRADE_9),
+  v.literal(GRADES.GRADE_10),
+);
 
 const schema = defineSchema(
   {
@@ -30,14 +58,56 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
-    }).index("email", ["email"]), // index for the email. do not remove or modify
+      
+      // Additional fields for teachers and students
+      grade: v.optional(gradeValidator),
+      subjects: v.optional(v.array(subjectValidator)), // subjects teacher teaches or student studies
+      studentId: v.optional(v.string()), // unique student ID for login
+      phone: v.optional(v.string()),
+      school: v.optional(v.string()),
+    }).index("email", ["email"])
+      .index("by_role", ["role"])
+      .index("by_student_id", ["studentId"])
+      .index("by_grade", ["grade"]),
 
-    // add other tables here
+    // Student progress tracking
+    progress: defineTable({
+      userId: v.id("users"),
+      subject: subjectValidator,
+      videosCompleted: v.number(),
+      assignmentsCompleted: v.number(),
+      quizScore: v.optional(v.number()),
+      quizCompleted: v.boolean(),
+      notesViewed: v.boolean(),
+    }).index("by_user", ["userId"])
+      .index("by_user_and_subject", ["userId", "subject"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Quiz attempts
+    quizAttempts: defineTable({
+      userId: v.id("users"),
+      subject: subjectValidator,
+      score: v.number(),
+      totalQuestions: v.number(),
+      timeSpent: v.number(), // in seconds
+      answers: v.array(v.object({
+        questionId: v.number(),
+        selectedAnswer: v.string(),
+        isCorrect: v.boolean(),
+      })),
+    }).index("by_user", ["userId"])
+      .index("by_user_and_subject", ["userId", "subject"]),
+
+    // Assignment submissions
+    assignmentSubmissions: defineTable({
+      userId: v.id("users"),
+      subject: subjectValidator,
+      answers: v.array(v.object({
+        questionId: v.number(),
+        answer: v.string(),
+      })),
+      submittedAt: v.number(),
+    }).index("by_user", ["userId"])
+      .index("by_user_and_subject", ["userId", "subject"]),
   },
   {
     schemaValidation: false,
