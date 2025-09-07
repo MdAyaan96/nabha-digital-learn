@@ -159,6 +159,11 @@ export default function StudentDashboard() {
                                 <Badge className="bg-white/10 text-white border-white/30">
                                   Notes: {p.notesViewed ? "Viewed" : "Not viewed"}
                                 </Badge>
+                                {typeof (p as any).quizScore === "number" && (
+                                  <Badge className="bg-white/10 text-white border-white/30">
+                                    Quiz Score: {(p as any).quizScore}
+                                  </Badge>
+                                )}
                               </div>
 
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
