@@ -1,7 +1,72 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
-import { SUBJECTS, GRADES } from "./schema";
+import { GRADES, subjectValidator } from "./schema";
+
+// Set current user as a student with a grade
+export const setStudentProfile = mutation({
+  args: { grade: v.union(v.literal(GRADES.GRADE_8), v.literal(GRADES.GRADE_9), v.literal(GRADES.GRADE_10)) },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+    await ctx.db.patch(user._id, { role: "student", grade: args.grade });
+    return true;
+  },
+});
+
+// Upsert progress for current user and subject
+export const updateProgress = mutation({
+  args: {
+    subject: subjectValidator,
+    updates: v.object({
+      videosCompleted: v.optional(v.number()),
+      assignmentsCompleted: v.optional(v.number()),
+      quizScore: v.optional(v.number()),
+      quizCompleted: v.optional(v.boolean()),
+      notesViewed: v.optional(v.boolean()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+    if (user.role !== "student") throw new Error("Only students can update progress");
+
+    const existing = await ctx.db
+      .query("progress")
+      .withIndex("by_user_and_subject", (q) => q.eq("userId", user._id).eq("subject", args.subject))
+      .unique()
+      .catch(() => null);
+
+    if (!existing) {
+      await ctx.db.insert("progress", {
+        userId: user._id,
+        subject: args.subject,
+        videosCompleted: args.updates.videosCompleted ?? 0,
+        assignmentsCompleted: args.updates.assignmentsCompleted ?? 0,
+        quizScore: args.updates.quizScore,
+        quizCompleted: args.updates.quizCompleted ?? false,
+        notesViewed: args.updates.notesViewed ?? false,
+      });
+      return;
+    }
+
+    await ctx.db.patch(existing._id, {
+      ...args.updates,
+      videosCompleted: args.updates.videosCompleted ?? existing.videosCompleted,
+      assignmentsCompleted: args.updates.assignmentsCompleted ?? existing.assignmentsCompleted,
+    });
+  },
+});
+
+// Get my progress across subjects
+export const getMyProgress = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+    return await ctx.db.query("progress").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+  },
+});
 
 // Get student dashboard data
 export const getStudentDashboard = query({

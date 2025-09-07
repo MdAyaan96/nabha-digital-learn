@@ -1,6 +1,21 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { GRADES, subjectValidator } from "./schema";
 import { getCurrentUser } from "./users";
+
+// Add: Set current user as a teacher with grade and subjects
+export const setTeacherProfile = mutation({
+  args: {
+    grade: v.union(v.literal(GRADES.GRADE_8), v.literal(GRADES.GRADE_9), v.literal(GRADES.GRADE_10)),
+    subjects: v.array(subjectValidator),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+    await ctx.db.patch(user._id, { role: "teacher", grade: args.grade, subjects: args.subjects });
+    return true;
+  },
+});
 
 // Get teacher dashboard data
 export const getTeacherDashboard = query({

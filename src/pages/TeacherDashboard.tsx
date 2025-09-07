@@ -1,11 +1,38 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { BookOpen, Home } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useAuth } from "@/hooks/use-auth";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SUBJECT_CONTENT } from "@/data/content";
+import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  const setTeacherProfile = useMutation(api.teachers.setTeacherProfile);
+  const dashboard = useQuery(api.teachers.getTeacherDashboard);
+  const [grade, setGrade] = useState<"8" | "9" | "10">("8");
+  const [subjects, setSubjects] = useState<Array<keyof typeof SUBJECT_CONTENT>>(["math", "english"]);
+
+  const toggleSubject = (s: keyof typeof SUBJECT_CONTENT) => {
+    setSubjects((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated && !isLoading) navigate("/auth");
+  }, [isAuthenticated, isLoading, navigate]);
+
+  const handleSetTeacher = async () => {
+    await setTeacherProfile({ grade, subjects: subjects as any });
+    toast.success("Profile set as Teacher");
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -19,7 +46,7 @@ export default function TeacherDashboard() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-2xl"
+          className="w-full max-w-5xl"
         >
           <Card className="backdrop-blur-xl bg-white/10 border border-white/20">
             <CardHeader className="text-center">
@@ -29,9 +56,85 @@ export default function TeacherDashboard() {
               <CardTitle className="text-white text-2xl">Teacher Dashboard</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <p className="text-white/80 text-center">
-                Welcome! Your registration worked. We’ll add teacher controls and student progress views here.
-              </p>
+              {!user?.role || user.role !== "teacher" ? (
+                <div className="space-y-4">
+                  <p className="text-white/80 text-center">
+                    Select your grade and subjects and click "Set as Teacher" to view class progress.
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    {(["8", "9", "10"] as const).map((g) => (
+                      <Button
+                        key={g}
+                        variant={grade === g ? "default" : "outline"}
+                        onClick={() => setGrade(g)}
+                        className="cursor-pointer"
+                      >
+                        Grade {g}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                    {(Object.keys(SUBJECT_CONTENT) as Array<keyof typeof SUBJECT_CONTENT>).map((s) => (
+                      <label
+                        key={s}
+                        className="flex items-center gap-2 backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20 rounded-md p-2 cursor-pointer"
+                        onClick={() => toggleSubject(s)}
+                      >
+                        <Checkbox checked={subjects.includes(s)} />
+                        <span>{SUBJECT_CONTENT[s].icon} {SUBJECT_CONTENT[s].title}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleSetTeacher}
+                      className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white"
+                    >
+                      Set as Teacher
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <p className="text-white/80">
+                      Grade {user?.grade} • Subjects: {(user?.subjects || []).join(", ")}
+                    </p>
+                    <Badge className="bg-white/10 text-white border-white/30">Teacher</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(dashboard?.studentProgress || []).map(({ student, progress }) => (
+                      <Card key={student._id} className="bg-white/10 border-white/20">
+                        <CardHeader>
+                          <CardTitle className="text-white text-lg">
+                            {student.name || student.email || "Student"} • Grade {student.grade}
+                          </CardTitle>
+                          <CardDescription className="text-white/70">
+                            Subjects tracked: {progress.length}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {progress.map((p) => (
+                            <div key={p._id} className="flex justify-between text-white/80">
+                              <span className="capitalize">{p.subject}</span>
+                              <span>
+                                V:{p.videosCompleted} • A:{p.assignmentsCompleted} • Q:{p.quizCompleted ? "✅" : "—"}
+                              </span>
+                            </div>
+                          ))}
+                          {progress.length === 0 && (
+                            <p className="text-white/60">No progress yet.</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-center">
                 <Button
                   onClick={() => navigate("/")}
