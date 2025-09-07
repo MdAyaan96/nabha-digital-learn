@@ -32,6 +32,12 @@ export default function TeacherDashboard() {
   }, [isAuthenticated, isLoading, navigate]);
 
   const handleSetTeacher = async () => {
+    // Prevent calling the mutation if not authenticated
+    if (!isAuthenticated) {
+      toast.error("Please sign in first.");
+      navigate("/auth?redirect=/teacher-dashboard");
+      return;
+    }
     if (saving) return;
     setSaving(true);
     try {
