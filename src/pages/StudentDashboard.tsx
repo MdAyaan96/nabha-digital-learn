@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { GraduationCap, Home } from "lucide-react";
+import { GraduationCap, Home, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "convex/react";
@@ -23,6 +23,7 @@ export default function StudentDashboard() {
   const setStudentProfile = useMutation(api.students.setStudentProfile);
   const myProgress = useQuery(api.students.getMyProgress, isAuthenticated && !!user ? {} : undefined) || [];
   const [selectGrade, setSelectGrade] = useState<"8" | "9" | "10">("8");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const progressBySubject = useMemo(() => {
     const map: Record<string, typeof myProgress[number]> = {};
@@ -36,11 +37,16 @@ export default function StudentDashboard() {
   }
 
   const handleSetStudent = async () => {
-    // Pull details from localStorage to persist on backend
-    const localName = localStorage.getItem("studentName") || undefined;
-    const localId = localStorage.getItem("studentId") || undefined;
-    await setStudentProfile({ grade: selectGrade, name: localName, studentId: localId });
-    toast.success("Profile set as Student");
+    if (savingProfile) return;
+    setSavingProfile(true);
+    try {
+      const localName = localStorage.getItem("studentName") || undefined;
+      const localId = localStorage.getItem("studentId") || undefined;
+      await setStudentProfile({ grade: selectGrade, name: localName, studentId: localId });
+      toast.success("Profile set as Student");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const subjects = Object.keys(SUBJECT_CONTENT) as Array<keyof typeof SUBJECT_CONTENT>;
@@ -108,8 +114,16 @@ export default function StudentDashboard() {
                   <Button
                     onClick={handleSetStudent}
                     className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                    disabled={savingProfile}
                   >
-                    Set as Student
+                    {savingProfile ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>Set as Student</>
+                    )}
                   </Button>
                 </div>
               ) : (
@@ -267,25 +281,31 @@ function AssignmentDialog({
   const questions = pickByGrade(content.assignments, grade);
 
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (id: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleSubmit = async () => {
-    // Ensure all questions answered (allow empty but warn)
-    const payload = questions.map((q) => ({
-      questionId: q.id,
-      answer: answers[q.id] ?? "",
-    }));
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const payload = questions.map((q) => ({
+        questionId: q.id,
+        answer: answers[q.id] ?? "",
+      }));
 
-    await submitAssignment({
-      subject,
-      answers: payload,
-    });
+      await submitAssignment({
+        subject,
+        answers: payload,
+      });
 
-    toast.success("Assignment submitted");
-    onOpenChange(false);
+      toast.success("Assignment submitted");
+      onOpenChange(false);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -318,14 +338,23 @@ function AssignmentDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
               className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+              disabled={submitting}
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+              disabled={submitting}
             >
-              Submit Assignment
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>Submit Assignment</>
+              )}
             </Button>
           </div>
         </div>
@@ -354,6 +383,7 @@ function QuizDialog({
   const [secondsLeft, setSecondsLeft] = useState(120);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Reset state when dialog opens
   React.useEffect(() => {
@@ -388,28 +418,33 @@ function QuizDialog({
 
   const handleSubmit = async (auto = false) => {
     if (!startedAt) return;
-    const timeSpent = Math.min(120, Math.floor((Date.now() - startedAt) / 1000));
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const timeSpent = Math.min(120, Math.floor((Date.now() - startedAt) / 1000));
 
-    const answers = questions.map((q) => {
-      const choice = selected[q.id] ?? "";
-      const isCorrect = choice === q.correct;
-      return { questionId: q.id, selectedAnswer: choice, isCorrect };
-    });
+      const answers = questions.map((q) => {
+        const choice = selected[q.id] ?? "";
+        const isCorrect = choice === q.correct;
+        return { questionId: q.id, selectedAnswer: choice, isCorrect };
+      });
 
-    const r = await submitQuiz({
-      subject,
-      answers,
-      timeSpent,
-    });
+      const r = await submitQuiz({
+        subject,
+        answers,
+        timeSpent,
+      });
 
-    setResult({ score: r.score, total: r.totalQuestions });
-    if (auto) toast("Time's up! Quiz submitted automatically.");
-    else toast.success("Quiz submitted");
+      setResult({ score: r.score, total: r.totalQuestions });
+      if (auto) toast("Time's up! Quiz submitted automatically.");
+      else toast.success("Quiz submitted");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const onClose = (v: boolean) => {
     if (!v && !result) {
-      // prevent accidental close mid-quiz; allow close after result
       toast("Finish the quiz or wait for time to end");
       return;
     }
@@ -463,8 +498,16 @@ function QuizDialog({
                 variant="outline"
                 onClick={() => handleSubmit(false)}
                 className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+                disabled={submitting || !!result}
               >
-                Submit Quiz
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>Submit Quiz</>
+                )}
               </Button>
             </div>
           </div>

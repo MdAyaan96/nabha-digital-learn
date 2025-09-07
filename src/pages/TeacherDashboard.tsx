@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SUBJECT_CONTENT } from "@/data/content";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function TeacherDashboard() {
   const dashboard = useQuery(api.teachers.getTeacherDashboard, isAuthenticated ? {} : undefined);
   const [grade, setGrade] = useState<"8" | "9" | "10">("8");
   const [subjects, setSubjects] = useState<Array<keyof typeof SUBJECT_CONTENT>>(["math", "english"]);
+  const [saving, setSaving] = useState(false);
 
   const toggleSubject = (s: keyof typeof SUBJECT_CONTENT) => {
     setSubjects((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -30,8 +32,14 @@ export default function TeacherDashboard() {
   }, [isAuthenticated, isLoading, navigate]);
 
   const handleSetTeacher = async () => {
-    await setTeacherProfile({ grade, subjects: subjects as any });
-    toast.success("Profile set as Teacher");
+    if (saving) return;
+    setSaving(true);
+    try {
+      await setTeacherProfile({ grade, subjects: subjects as any });
+      toast.success("Profile set as Teacher");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -91,8 +99,16 @@ export default function TeacherDashboard() {
                     <Button
                       onClick={handleSetTeacher}
                       className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white"
+                      disabled={saving}
                     >
-                      Set as Teacher
+                      {saving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>Set as Teacher</>
+                      )}
                     </Button>
                   </div>
                 </div>
