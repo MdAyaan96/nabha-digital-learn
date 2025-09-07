@@ -63,7 +63,8 @@ export const getMyProgress = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    // Return empty list instead of throwing to avoid client errors during auth transitions
+    if (!user) return [];
     return await ctx.db.query("progress").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
   },
 });
