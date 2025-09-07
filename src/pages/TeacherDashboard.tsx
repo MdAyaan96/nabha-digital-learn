@@ -17,7 +17,7 @@ export default function TeacherDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
   const setTeacherProfile = useMutation(api.teachers.setTeacherProfile);
-  const dashboard = useQuery(api.teachers.getTeacherDashboard, isAuthenticated && user?.role === "teacher" ? {} : undefined);
+  const dashboard = useQuery(api.teachers.getTeacherDashboard, isAuthenticated ? {} : undefined);
   const [grade, setGrade] = useState<"8" | "9" | "10">("8");
   const [subjects, setSubjects] = useState<Array<keyof typeof SUBJECT_CONTENT>>(["math", "english"]);
 
@@ -153,6 +153,18 @@ export default function TeacherDashboard() {
                         </CardContent>
                       </Card>
                     ))}
+                    {Array.isArray(dashboard?.studentProgress) && dashboard.studentProgress.length === 0 && (
+                      <div className="col-span-full">
+                        <Card className="bg-white/10 border-white/20">
+                          <CardHeader>
+                            <CardTitle className="text-white">No students yet</CardTitle>
+                            <CardDescription className="text-white/70">
+                              We couldn't find any students in your grade or subject. Ask your students to create their accounts and start assignments/quizzes.
+                            </CardDescription>
+                          </CardHeader>
+                        </Card>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
