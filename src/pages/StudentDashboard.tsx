@@ -38,12 +38,26 @@ export default function StudentDashboard() {
 
   const handleSetStudent = async () => {
     if (savingProfile) return;
+
+    // Guard: must be authenticated to set profile
+    if (!isAuthenticated || !user) {
+      toast("Please sign in first to set your student profile.");
+      navigate("/auth?redirect=/student-dashboard");
+      return;
+    }
+
     setSavingProfile(true);
     try {
       const localName = localStorage.getItem("studentName") || undefined;
       const localId = localStorage.getItem("studentId") || undefined;
       await setStudentProfile({ grade: selectGrade, name: localName, studentId: localId });
       toast.success("Profile set as Student");
+    } catch (err: any) {
+      const msg = err?.message || "Failed to set profile. Please try again.";
+      toast.error(msg);
+      if (msg.toLowerCase().includes("unauthorized")) {
+        navigate("/auth?redirect=/student-dashboard");
+      }
     } finally {
       setSavingProfile(false);
     }
