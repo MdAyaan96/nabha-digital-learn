@@ -95,6 +95,23 @@ export default function TeacherSignup() {
               <CardDescription className="text-white/80">
                 Join our digital learning platform for rural education
               </CardDescription>
+
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  variant="outline"
+                  className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+                  onClick={() => navigate("/student-login")}
+                >
+                  Login as Student
+                </Button>
+                <Button
+                  variant="outline"
+                  className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+                  onClick={() => navigate("/auth")}
+                >
+                  Login as Teacher
+                </Button>
+              </div>
             </CardHeader>
             
             <CardContent>
@@ -194,16 +211,26 @@ export default function TeacherSignup() {
                 </Button>
               </form>
               
-              <div className="mt-6 text-center">
+              <div className="mt-6 text-center space-y-2">
                 <p className="text-white/70 text-sm">
-                  Already have an account?{" "}
-                  <button 
-                    onClick={() => navigate("/student-login")}
-                    className="text-white font-semibold hover:underline"
-                  >
-                    Student Login
-                  </button>
+                  Already have an account?
                 </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+                    onClick={() => navigate("/student-login")}
+                  >
+                    Login as Student
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Login as Teacher
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
