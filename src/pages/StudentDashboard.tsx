@@ -36,7 +36,10 @@ export default function StudentDashboard() {
   }
 
   const handleSetStudent = async () => {
-    await setStudentProfile({ grade: selectGrade });
+    // Pull details from localStorage to persist on backend
+    const localName = localStorage.getItem("studentName") || undefined;
+    const localId = localStorage.getItem("studentId") || undefined;
+    await setStudentProfile({ grade: selectGrade, name: localName, studentId: localId });
     toast.success("Profile set as Student");
   };
 
@@ -63,6 +66,11 @@ export default function StudentDashboard() {
                 <GraduationCap className="h-7 w-7" />
               </div>
               <CardTitle className="text-white text-2xl">Student Dashboard</CardTitle>
+              {user?.name && (
+                <div className="mt-1 text-white/80">
+                  Welcome, {user.name}
+                </div>
+              )}
               {!user?.role || user.role !== "student" ? (
                 <div className="mt-2 text-white/80">
                   <div className="flex items-center justify-center gap-3">

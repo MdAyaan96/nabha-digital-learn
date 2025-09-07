@@ -5,11 +5,20 @@ import { GRADES, subjectValidator } from "./schema";
 
 // Set current user as a student with a grade
 export const setStudentProfile = mutation({
-  args: { grade: v.union(v.literal(GRADES.GRADE_8), v.literal(GRADES.GRADE_9), v.literal(GRADES.GRADE_10)) },
+  args: { 
+    grade: v.union(v.literal(GRADES.GRADE_8), v.literal(GRADES.GRADE_9), v.literal(GRADES.GRADE_10)),
+    name: v.optional(v.string()),
+    studentId: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Unauthorized");
-    await ctx.db.patch(user._id, { role: "student", grade: args.grade });
+    await ctx.db.patch(user._id, { 
+      role: "student", 
+      grade: args.grade,
+      ...(args.name ? { name: args.name } : {}),
+      ...(args.studentId ? { studentId: args.studentId } : {}),
+    });
     return true;
   },
 });

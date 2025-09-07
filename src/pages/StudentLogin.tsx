@@ -9,13 +9,14 @@ import { toast } from "sonner";
 
 export default function StudentLogin() {
   const [studentId, setStudentId] = useState("");
+  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentId.trim()) {
-      toast.error("Please enter your Student ID");
+    if (!name.trim() || !studentId.trim()) {
+      toast.error("Please enter your Name and Student ID");
       return;
     }
 
@@ -25,8 +26,9 @@ export default function StudentLogin() {
       // Simulate API call - in real app, validate student ID
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store student ID in localStorage for demo
+      // Store student login info for later usage
       localStorage.setItem("studentId", studentId);
+      localStorage.setItem("studentName", name);
       localStorage.setItem("userRole", "student");
       
       toast.success("Login successful!");
@@ -74,6 +76,17 @@ export default function StudentLogin() {
             
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/90">Name</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="backdrop-blur-sm bg-white/10 border-white/30 text-white placeholder:text-white/60 focus:border-white/50"
+                    disabled={isLoading}
+                  />
+                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/90">Student ID</label>
                   <Input
