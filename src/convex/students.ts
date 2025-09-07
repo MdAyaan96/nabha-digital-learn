@@ -19,6 +19,24 @@ export const setStudentProfile = mutation({
       ...(args.name ? { name: args.name } : {}),
       ...(args.studentId ? { studentId: args.studentId } : {}),
     });
+
+    // Associate this student with all teachers of the same grade
+    const teachersInGrade = await ctx.db
+      .query("users")
+      .withIndex("by_role_and_grade", (q) => q.eq("role", "teacher").eq("grade", args.grade))
+      .collect();
+
+    for (const t of teachersInGrade) {
+      const existing = await ctx.db
+        .query("teacherStudents")
+        .withIndex("by_teacher_and_student", (q) => q.eq("teacherId", t._id).eq("studentId", user._id))
+        .unique()
+        .catch(() => null);
+      if (!existing) {
+        await ctx.db.insert("teacherStudents", { teacherId: t._id, studentId: user._id });
+      }
+    }
+
     return true;
   },
 });

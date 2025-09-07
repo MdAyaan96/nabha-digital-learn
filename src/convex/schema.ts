@@ -112,6 +112,15 @@ const schema = defineSchema(
       submittedAt: v.number(),
     }).index("by_user", ["userId"])
       .index("by_user_and_subject", ["userId", "subject"]),
+
+    // Add: explicit association table between teachers and students
+    teacherStudents: defineTable({
+      teacherId: v.id("users"),
+      studentId: v.id("users"),
+    })
+      .index("by_teacher", ["teacherId"])
+      .index("by_student", ["studentId"])
+      .index("by_teacher_and_student", ["teacherId", "studentId"]),
   },
   {
     schemaValidation: false,

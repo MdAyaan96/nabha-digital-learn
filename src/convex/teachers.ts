@@ -13,6 +13,24 @@ export const setTeacherProfile = mutation({
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Unauthorized");
     await ctx.db.patch(user._id, { role: "teacher", grade: args.grade, subjects: args.subjects });
+
+    // Associate this teacher with all existing students of the same grade
+    const studentsInGrade = await ctx.db
+      .query("users")
+      .withIndex("by_role_and_grade", (q) => q.eq("role", "student").eq("grade", args.grade))
+      .collect();
+
+    for (const s of studentsInGrade) {
+      const existing = await ctx.db
+        .query("teacherStudents")
+        .withIndex("by_teacher_and_student", (q) => q.eq("teacherId", user._id).eq("studentId", s._id))
+        .unique()
+        .catch(() => null);
+      if (!existing) {
+        await ctx.db.insert("teacherStudents", { teacherId: user._id, studentId: s._id });
+      }
+    }
+
     return true;
   },
 });
@@ -28,17 +46,50 @@ export const getTeacherDashboard = query({
         return { teacher: user ?? null, studentProgress: [] };
       }
 
-      // Query students by role AND grade using compound index
-      const students = await ctx.db
-        .query("users")
-        .withIndex("by_role_and_grade", (q) =>
-          q.eq("role", "student").eq("grade", user.grade!)
-        )
+      // Primary: Use explicit associations
+      const links = await ctx.db
+        .query("teacherStudents")
+        .withIndex("by_teacher", (q) => q.eq("teacherId", user._id))
         .collect();
 
-      // If we found students as expected, load their progress and optionally filter by teacher subjects
+      const studentProgress = await Promise.all(
+        links.map(async (link) => {
+          const student = await ctx.db.get(link.studentId);
+          if (!student) return null;
+
+          // Load progress and optionally filter by teacher subjects
+          const progressForStudent = await ctx.db
+            .query("progress")
+            .withIndex("by_user", (q) => q.eq("userId", student._id))
+            .collect();
+
+          const filtered =
+            user.subjects && user.subjects.length > 0
+              ? progressForStudent.filter((p) => user.subjects!.includes(p.subject))
+              : progressForStudent;
+
+          return {
+            student,
+            progress: filtered,
+          };
+        }),
+      );
+
+      const cleaned = studentProgress.filter((x): x is NonNullable<typeof x> => !!x);
+
+      // If we have associated students, return them
+      if (cleaned.length > 0) {
+        return { teacher: user, studentProgress: cleaned };
+      }
+
+      // Fallback: Query by role AND grade (legacy or when associations not yet built)
+      const students = await ctx.db
+        .query("users")
+        .withIndex("by_role_and_grade", (q) => q.eq("role", "student").eq("grade", user.grade!))
+        .collect();
+
       if (students.length > 0) {
-        const studentProgress = await Promise.all(
+        const mapped = await Promise.all(
           students.map(async (student) => {
             const progressForStudent = await ctx.db
               .query("progress")
@@ -50,27 +101,18 @@ export const getTeacherDashboard = query({
                 ? progressForStudent.filter((p) => user.subjects!.includes(p.subject))
                 : progressForStudent;
 
-            return {
-              student,
-              progress: filtered,
-            };
+            return { student, progress: filtered };
           }),
         );
-
-        return {
-          teacher: user,
-          studentProgress,
-        };
+        return { teacher: user, studentProgress: mapped };
       }
 
-      // Fallback: In some cases, students may not have role=student properly set yet,
-      // but they do have recorded progress. Use progress-by-subject and join users by grade.
+      // Existing subject-based fallback remains
       const subjectsToCheck =
         user.subjects && user.subjects.length > 0
           ? user.subjects
           : (["math", "physics", "english", "biology", "punjabi"] as const);
 
-      // Collect all progress docs for the teacher's subjects
       const progressDocs = (
         await Promise.all(
           subjectsToCheck.map(async (subject) => {
@@ -83,7 +125,6 @@ export const getTeacherDashboard = query({
         )
       ).flat();
 
-      // Group by user and filter by teacher's grade
       const byUser = new Map<string, { student: any; progress: any[] }>();
       for (const p of progressDocs) {
         const student = await ctx.db.get(p.userId);
@@ -97,11 +138,11 @@ export const getTeacherDashboard = query({
         byUser.get(key)!.progress.push(p);
       }
 
-      const studentProgress = Array.from(byUser.values());
+      const fallbackStudentProgress = Array.from(byUser.values());
 
       return {
         teacher: user,
-        studentProgress,
+        studentProgress: fallbackStudentProgress,
       };
     } catch {
       // On unexpected errors, return a safe empty payload
