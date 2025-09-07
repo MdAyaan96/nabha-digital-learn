@@ -118,11 +118,33 @@ export default function TeacherDashboard() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                           {progress.map((p: any) => (
-                            <div key={p._id} className="flex justify-between text-white/80">
-                              <span className="capitalize">{p.subject}</span>
-                              <span>
-                                V:{p.videosCompleted} • A:{p.assignmentsCompleted} • Q:{p.quizCompleted ? "✅" : "—"}
-                              </span>
+                            <div
+                              key={p._id}
+                              className="flex flex-col gap-1 rounded-md p-2 bg-white/5 border border-white/10"
+                            >
+                              <div className="flex items-center justify-between text-white">
+                                <span className="capitalize font-medium">
+                                  {SUBJECT_CONTENT[p.subject as keyof typeof SUBJECT_CONTENT]?.icon} {SUBJECT_CONTENT[p.subject as keyof typeof SUBJECT_CONTENT]?.title || p.subject}
+                                </span>
+                                <Badge className="bg-white/10 text-white border-white/30">
+                                  {p.quizCompleted ? "Quiz ✓" : "Quiz —"}
+                                </Badge>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 text-sm text-white/80">
+                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                  Videos: {p.videosCompleted ?? 0}
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                  Assignments: {p.assignmentsCompleted ?? 0}
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                  Quiz Score: {typeof p.quizScore === "number" ? p.quizScore : "—"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                  Notes: {p.notesViewed ? "Viewed" : "Not viewed"}
+                                </span>
+                              </div>
                             </div>
                           ))}
                           {progress.length === 0 && (
