@@ -58,14 +58,22 @@ export const updateProgress = mutation({
   },
 });
 
-// Get my progress across subjects
+// Get my progress across subjects (hardened against auth transitions)
 export const getMyProgress = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    // Return empty list instead of throwing to avoid client errors during auth transitions
-    if (!user) return [];
-    return await ctx.db.query("progress").withIndex("by_user", (q) => q.eq("userId", user._id)).collect();
+    try {
+      const user = await getCurrentUser(ctx);
+      // Return empty list instead of throwing to avoid client errors during auth transitions
+      if (!user) return [];
+      return await ctx.db
+        .query("progress")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+    } catch {
+      // On any unexpected error during auth transitions, return an empty array
+      return [];
+    }
   },
 });
 
