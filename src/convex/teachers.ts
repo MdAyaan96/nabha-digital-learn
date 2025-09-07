@@ -44,9 +44,11 @@ export const getTeacherDashboard = query({
             .withIndex("by_user", (q) => q.eq("userId", student._id))
             .collect();
 
-          const filtered = progressForStudent.filter((p) =>
-            user.subjects?.includes(p.subject),
-          );
+          // If teacher has subjects, filter by them; otherwise include all
+          const filtered =
+            user.subjects && user.subjects.length > 0
+              ? progressForStudent.filter((p) => user.subjects!.includes(p.subject))
+              : progressForStudent;
 
           return {
             student,
