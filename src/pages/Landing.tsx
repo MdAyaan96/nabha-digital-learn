@@ -83,6 +83,15 @@ export default function Landing() {
               >
                 Teacher Signup
               </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+              >
+                <a href="/project-1757255689.zip" download>
+                  Download ZIP
+                </a>
+              </Button>
             </motion.div>
           </div>
         </div>
