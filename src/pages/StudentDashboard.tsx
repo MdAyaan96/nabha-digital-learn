@@ -1,3 +1,4 @@
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -6,7 +7,6 @@ import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useEffect, useMemo, useState } from "react";
 import { SUBJECT_CONTENT, getContentByGrade } from "@/data/content";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -343,7 +343,7 @@ function QuizDialog({
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
 
   // Reset state when dialog opens
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) {
       setSelected({});
       setSecondsLeft(120);
@@ -353,7 +353,7 @@ function QuizDialog({
   }, [open]);
 
   // Timer
-  useEffect(() => {
+  React.useEffect(() => {
     if (!open || result) return;
     if (secondsLeft <= 0) {
       handleSubmit(true).catch(() => void 0);
