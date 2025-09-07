@@ -13,7 +13,6 @@ export default function TeacherSignup() {
     name: "",
     email: "",
     phone: "",
-    school: "",
     grade: "",
     subjects: [] as string[],
   });
@@ -134,18 +133,6 @@ export default function TeacherSignup() {
                       placeholder="Enter your phone number"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="backdrop-blur-sm bg-white/10 border-white/30 text-white placeholder:text-white/60 focus:border-white/50"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/90">School Name</label>
-                    <Input
-                      type="text"
-                      placeholder="Enter your school name"
-                      value={formData.school}
-                      onChange={(e) => setFormData(prev => ({ ...prev, school: e.target.value }))}
                       className="backdrop-blur-sm bg-white/10 border-white/30 text-white placeholder:text-white/60 focus:border-white/50"
                       disabled={isLoading}
                     />
