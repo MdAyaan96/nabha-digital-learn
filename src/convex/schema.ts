@@ -68,7 +68,9 @@ const schema = defineSchema(
     }).index("email", ["email"])
       .index("by_role", ["role"])
       .index("by_student_id", ["studentId"])
-      .index("by_grade", ["grade"]),
+      .index("by_grade", ["grade"])
+      // Add compound index to efficiently fetch students by role and grade
+      .index("by_role_and_grade", ["role", "grade"]),
 
     // Student progress tracking
     progress: defineTable({

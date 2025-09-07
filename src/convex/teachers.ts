@@ -24,20 +24,19 @@ export const getTeacherDashboard = query({
     try {
       const user = await getCurrentUser(ctx);
       // Return a safe empty payload during auth transitions or when not a teacher
-      if (!user || user.role !== "teacher") {
-        return { teacher: null, studentProgress: [] };
+      if (!user || user.role !== "teacher" || !user.grade) {
+        return { teacher: user ?? null, studentProgress: [] };
       }
 
-      // Query students by role
-      const studentsByRole = await ctx.db
+      // Query students by role AND grade using compound index
+      const students = await ctx.db
         .query("users")
-        .withIndex("by_role", (q) => q.eq("role", "student"))
+        .withIndex("by_role_and_grade", (q) =>
+          q.eq("role", "student").eq("grade", user.grade!)
+        )
         .collect();
 
-      // Filter in memory by grade (no DB .filter)
-      const students = studentsByRole.filter((s) => s.grade === user.grade);
-
-      // Fetch progress per student using the by_user index
+      // Fetch progress per student using the by_user index, filter by teacher subjects
       const studentProgress = await Promise.all(
         students.map(async (student) => {
           const progressForStudent = await ctx.db
@@ -88,14 +87,17 @@ export const getSubjectProgressForTeacher = query({
       throw new Error("You don't teach this subject");
     }
 
-    // Query students by role
-    const studentsByRole = await ctx.db
-      .query("users")
-      .withIndex("by_role", (q) => q.eq("role", "student"))
-      .collect();
+    if (!user.grade) {
+      return [];
+    }
 
-    // Filter in memory by grade
-    const students = studentsByRole.filter((s) => s.grade === user.grade);
+    // Query students by role AND grade using compound index
+    const students = await ctx.db
+      .query("users")
+      .withIndex("by_role_and_grade", (q) =>
+        q.eq("role", "student").eq("grade", user.grade!)
+      )
+      .collect();
 
     // For each student, fetch progress and quiz attempts for the subject using by_user_and_subject
     const studentData = await Promise.all(
