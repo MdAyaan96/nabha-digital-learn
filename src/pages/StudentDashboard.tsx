@@ -60,7 +60,7 @@ export default function StudentDashboard() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-4xl"
         >
-          <Card className="backdrop-blur-xl bg-white/10 border border-white/20">
+          <Card className="glass-panel">
             <CardHeader className="text-center">
               <div className="mx-auto w-fit p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white mb-3">
                 <GraduationCap className="h-7 w-7" />
@@ -120,7 +120,7 @@ export default function StudentDashboard() {
                   </div>
 
                   <Tabs defaultValue={subjects[0]} className="w-full">
-                    <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 bg-white/10">
+                    <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 glass-tabs">
                       {subjects.map((s) => (
                         <TabsTrigger key={s} value={s} className="text-white">
                           {SUBJECT_CONTENT[s].icon} {SUBJECT_CONTENT[s].title}
@@ -138,7 +138,7 @@ export default function StudentDashboard() {
                       };
                       return (
                         <TabsContent key={s} value={s} className="space-y-4">
-                          <Card className="bg-white/10 border-white/20">
+                          <Card className="glass-panel">
                             <CardHeader>
                               <CardTitle className="text-white">{content.title} • {content.lesson}</CardTitle>
                               <CardDescription className="text-white/70">
@@ -147,20 +147,20 @@ export default function StudentDashboard() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                               <div className="flex flex-wrap gap-2">
-                                <Badge className="bg-white/10 text-white border-white/30">
+                                <Badge className="pill">
                                   Videos: {p.videosCompleted}
                                 </Badge>
-                                <Badge className="bg-white/10 text-white border-white/30">
+                                <Badge className="pill">
                                   Assignments: {p.assignmentsCompleted}
                                 </Badge>
-                                <Badge className="bg-white/10 text-white border-white/30">
+                                <Badge className="pill">
                                   Quiz: {p.quizCompleted ? "Completed" : "Pending"}
                                 </Badge>
-                                <Badge className="bg-white/10 text-white border-white/30">
+                                <Badge className="pill">
                                   Notes: {p.notesViewed ? "Viewed" : "Not viewed"}
                                 </Badge>
                                 {typeof (p as any).quizScore === "number" && (
-                                  <Badge className="bg-white/10 text-white border-white/30">
+                                  <Badge className="pill">
                                     Quiz Score: {(p as any).quizScore}
                                   </Badge>
                                 )}
@@ -182,7 +182,7 @@ export default function StudentDashboard() {
                 <Button
                   onClick={() => navigate("/")}
                   variant="outline"
-                  className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+                  className="glass-button"
                 >
                   <Home className="mr-2 h-4 w-4" />
                   Back to Home

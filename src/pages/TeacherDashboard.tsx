@@ -48,7 +48,7 @@ export default function TeacherDashboard() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-5xl"
         >
-          <Card className="backdrop-blur-xl bg-white/10 border border-white/20">
+          <Card className="glass-panel">
             <CardHeader className="text-center">
               <div className="mx-auto w-fit p-3 rounded-full bg-gradient-to-r from-emerald-500 to-blue-600 text-white mb-3">
                 <BookOpen className="h-7 w-7" />
@@ -107,7 +107,7 @@ export default function TeacherDashboard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(dashboard?.studentProgress || []).map(({ student, progress }: any) => (
-                      <Card key={student._id} className="bg-white/10 border-white/20">
+                      <Card key={student._id} className="glass-panel">
                         <CardHeader>
                           <CardTitle className="text-white text-lg">
                             {student.name || student.email || "Student"} • Grade {student.grade}
@@ -120,28 +120,28 @@ export default function TeacherDashboard() {
                           {progress.map((p: any) => (
                             <div
                               key={p._id}
-                              className="flex flex-col gap-1 rounded-md p-2 bg-white/5 border border-white/10"
+                              className="flex flex-col gap-1 rounded-md p-2 glass-muted"
                             >
                               <div className="flex items-center justify-between text-white">
                                 <span className="capitalize font-medium">
                                   {SUBJECT_CONTENT[p.subject as keyof typeof SUBJECT_CONTENT]?.icon} {SUBJECT_CONTENT[p.subject as keyof typeof SUBJECT_CONTENT]?.title || p.subject}
                                 </span>
-                                <Badge className="bg-white/10 text-white border-white/30">
+                                <Badge className="pill">
                                   {p.quizCompleted ? "Quiz ✓" : "Quiz —"}
                                 </Badge>
                               </div>
 
                               <div className="flex flex-wrap gap-2 text-sm text-white/80">
-                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                <span className="px-2 py-0.5 rounded pill border">
                                   Videos: {p.videosCompleted ?? 0}
                                 </span>
-                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                <span className="px-2 py-0.5 rounded pill border">
                                   Assignments: {p.assignmentsCompleted ?? 0}
                                 </span>
-                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                <span className="px-2 py-0.5 rounded pill border">
                                   Quiz Score: {typeof p.quizScore === "number" ? p.quizScore : "—"}
                                 </span>
-                                <span className="px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                                <span className="px-2 py-0.5 rounded pill border">
                                   Notes: {p.notesViewed ? "Viewed" : "Not viewed"}
                                 </span>
                               </div>
@@ -155,7 +155,7 @@ export default function TeacherDashboard() {
                     ))}
                     {Array.isArray(dashboard?.studentProgress) && dashboard.studentProgress.length === 0 && (
                       <div className="col-span-full">
-                        <Card className="bg-white/10 border-white/20">
+                        <Card className="glass-panel">
                           <CardHeader>
                             <CardTitle className="text-white">No students yet</CardTitle>
                             <CardDescription className="text-white/70">
@@ -169,16 +169,14 @@ export default function TeacherDashboard() {
                 </div>
               )}
 
-              <div className="flex justify-center">
-                <Button
-                  onClick={() => navigate("/")}
-                  variant="outline"
-                  className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
-                >
-                  <Home className="mr-2 h-4 w-4" />
-                  Back to Home
-                </Button>
-              </div>
+              <Button
+                onClick={() => navigate("/")}
+                variant="outline"
+                className="glass-button"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Back to Home
+              </Button>
             </CardContent>
           </Card>
         </motion.div>

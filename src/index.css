@@ -124,3 +124,28 @@
     cursor: pointer;
   }
 }
+
+/* Add reusable glass theme utilities */
+.glass-panel {
+  @apply backdrop-blur-xl bg-white/10 border border-white/20 shadow-lg;
+}
+
+.glass-muted {
+  @apply bg-white/5 border border-white/10;
+}
+
+.glass-hover:hover {
+  @apply bg-white/15;
+}
+
+.glass-button {
+  @apply backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20;
+}
+
+.glass-tabs {
+  @apply bg-white/10 border border-white/20 backdrop-blur-md rounded-md;
+}
+
+.pill {
+  @apply bg-white/10 text-white border-white/30;
+}
