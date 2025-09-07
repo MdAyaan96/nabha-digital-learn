@@ -17,7 +17,7 @@ export default function TeacherDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
   const setTeacherProfile = useMutation(api.teachers.setTeacherProfile);
-  const dashboard = useQuery(api.teachers.getTeacherDashboard, isAuthenticated ? {} : undefined);
+  const dashboard = useQuery(api.teachers.getTeacherDashboard, isAuthenticated && user?.role === "teacher" ? {} : undefined);
   const [grade, setGrade] = useState<"8" | "9" | "10">("8");
   const [subjects, setSubjects] = useState<Array<keyof typeof SUBJECT_CONTENT>>(["math", "english"]);
 
