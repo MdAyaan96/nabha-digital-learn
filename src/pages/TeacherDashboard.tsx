@@ -17,7 +17,7 @@ export default function TeacherDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
   const setTeacherProfile = useMutation(api.teachers.setTeacherProfile);
-  const dashboard = useQuery(api.teachers.getTeacherDashboard);
+  const dashboard = useQuery(api.teachers.getTeacherDashboard, isAuthenticated ? {} : undefined);
   const [grade, setGrade] = useState<"8" | "9" | "10">("8");
   const [subjects, setSubjects] = useState<Array<keyof typeof SUBJECT_CONTENT>>(["math", "english"]);
 
@@ -106,7 +106,7 @@ export default function TeacherDashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(dashboard?.studentProgress || []).map(({ student, progress }) => (
+                    {(dashboard?.studentProgress || []).map(({ student, progress }: any) => (
                       <Card key={student._id} className="bg-white/10 border-white/20">
                         <CardHeader>
                           <CardTitle className="text-white text-lg">
@@ -117,7 +117,7 @@ export default function TeacherDashboard() {
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                          {progress.map((p) => (
+                          {progress.map((p: any) => (
                             <div key={p._id} className="flex justify-between text-white/80">
                               <span className="capitalize">{p.subject}</span>
                               <span>

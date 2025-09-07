@@ -16,7 +16,7 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth();
   const setStudentProfile = useMutation(api.students.setStudentProfile);
-  const myProgress = useQuery(api.students.getMyProgress) || [];
+  const myProgress = useQuery(api.students.getMyProgress, isAuthenticated ? {} : undefined) || [];
   const [selectGrade, setSelectGrade] = useState<"8" | "9" | "10">("8");
 
   const progressBySubject = useMemo(() => {
