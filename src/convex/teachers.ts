@@ -21,43 +21,49 @@ export const setTeacherProfile = mutation({
 export const getTeacherDashboard = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user || user.role !== "teacher") {
-      throw new Error("Unauthorized");
+    try {
+      const user = await getCurrentUser(ctx);
+      // Return a safe empty payload during auth transitions or when not a teacher
+      if (!user || user.role !== "teacher") {
+        return { teacher: null, studentProgress: [] };
+      }
+
+      // Query students by role
+      const studentsByRole = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", "student"))
+        .collect();
+
+      // Filter in memory by grade (no DB .filter)
+      const students = studentsByRole.filter((s) => s.grade === user.grade);
+
+      // Fetch progress per student using the by_user index
+      const studentProgress = await Promise.all(
+        students.map(async (student) => {
+          const progressForStudent = await ctx.db
+            .query("progress")
+            .withIndex("by_user", (q) => q.eq("userId", student._id))
+            .collect();
+
+          const filtered = progressForStudent.filter((p) =>
+            user.subjects?.includes(p.subject),
+          );
+
+          return {
+            student,
+            progress: filtered,
+          };
+        }),
+      );
+
+      return {
+        teacher: user,
+        studentProgress,
+      };
+    } catch {
+      // On unexpected errors, return a safe empty payload
+      return { teacher: null, studentProgress: [] };
     }
-
-    // Query students by role
-    const studentsByRole = await ctx.db
-      .query("users")
-      .withIndex("by_role", (q) => q.eq("role", "student"))
-      .collect();
-
-    // Filter in memory by grade (no DB .filter)
-    const students = studentsByRole.filter((s) => s.grade === user.grade);
-
-    // Fetch progress per student using the by_user index
-    const studentProgress = await Promise.all(
-      students.map(async (student) => {
-        const progressForStudent = await ctx.db
-          .query("progress")
-          .withIndex("by_user", (q) => q.eq("userId", student._id))
-          .collect();
-
-        const filtered = progressForStudent.filter((p) =>
-          user.subjects?.includes(p.subject),
-        );
-
-        return {
-          student,
-          progress: filtered,
-        };
-      }),
-    );
-
-    return {
-      teacher: user,
-      studentProgress,
-    };
   },
 });
 
