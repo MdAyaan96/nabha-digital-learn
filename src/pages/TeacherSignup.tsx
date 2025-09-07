@@ -107,7 +107,7 @@ export default function TeacherSignup() {
                 <Button
                   variant="outline"
                   className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/auth?redirect=/teacher-dashboard")}
                 >
                   Login as Teacher
                 </Button>
@@ -226,7 +226,7 @@ export default function TeacherSignup() {
                   <Button
                     variant="outline"
                     className="backdrop-blur-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
-                    onClick={() => navigate("/auth")}
+                    onClick={() => navigate("/auth?redirect=/teacher-dashboard")}
                   >
                     Login as Teacher
                   </Button>
