@@ -36,26 +36,68 @@ export const getTeacherDashboard = query({
         )
         .collect();
 
-      // Fetch progress per student using the by_user index, filter by teacher subjects
-      const studentProgress = await Promise.all(
-        students.map(async (student) => {
-          const progressForStudent = await ctx.db
-            .query("progress")
-            .withIndex("by_user", (q) => q.eq("userId", student._id))
-            .collect();
+      // If we found students as expected, load their progress and optionally filter by teacher subjects
+      if (students.length > 0) {
+        const studentProgress = await Promise.all(
+          students.map(async (student) => {
+            const progressForStudent = await ctx.db
+              .query("progress")
+              .withIndex("by_user", (q) => q.eq("userId", student._id))
+              .collect();
 
-          // If teacher has subjects, filter by them; otherwise include all
-          const filtered =
-            user.subjects && user.subjects.length > 0
-              ? progressForStudent.filter((p) => user.subjects!.includes(p.subject))
-              : progressForStudent;
+            const filtered =
+              user.subjects && user.subjects.length > 0
+                ? progressForStudent.filter((p) => user.subjects!.includes(p.subject))
+                : progressForStudent;
 
-          return {
-            student,
-            progress: filtered,
-          };
-        }),
-      );
+            return {
+              student,
+              progress: filtered,
+            };
+          }),
+        );
+
+        return {
+          teacher: user,
+          studentProgress,
+        };
+      }
+
+      // Fallback: In some cases, students may not have role=student properly set yet,
+      // but they do have recorded progress. Use progress-by-subject and join users by grade.
+      const subjectsToCheck =
+        user.subjects && user.subjects.length > 0
+          ? user.subjects
+          : (["math", "physics", "english", "biology", "punjabi"] as const);
+
+      // Collect all progress docs for the teacher's subjects
+      const progressDocs = (
+        await Promise.all(
+          subjectsToCheck.map(async (subject) => {
+            const rows = await ctx.db
+              .query("progress")
+              .withIndex("by_subject", (q) => q.eq("subject", subject))
+              .collect();
+            return rows;
+          }),
+        )
+      ).flat();
+
+      // Group by user and filter by teacher's grade
+      const byUser = new Map<string, { student: any; progress: any[] }>();
+      for (const p of progressDocs) {
+        const student = await ctx.db.get(p.userId);
+        if (!student) continue;
+        if (student.grade !== user.grade) continue;
+
+        const key = student._id.toString();
+        if (!byUser.has(key)) {
+          byUser.set(key, { student, progress: [] });
+        }
+        byUser.get(key)!.progress.push(p);
+      }
+
+      const studentProgress = Array.from(byUser.values());
 
       return {
         teacher: user,

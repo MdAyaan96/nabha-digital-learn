@@ -82,7 +82,9 @@ const schema = defineSchema(
       quizCompleted: v.boolean(),
       notesViewed: v.boolean(),
     }).index("by_user", ["userId"])
-      .index("by_user_and_subject", ["userId", "subject"]),
+      .index("by_user_and_subject", ["userId", "subject"])
+      // Add: index by subject for teacher dashboard fallback lookup
+      .index("by_subject", ["subject"]),
 
     // Quiz attempts
     quizAttempts: defineTable({
