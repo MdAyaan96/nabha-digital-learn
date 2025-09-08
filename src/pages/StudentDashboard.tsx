@@ -62,7 +62,7 @@ export default function StudentDashboard() {
   };
 
   const subjects = Object.keys(SUBJECT_CONTENT) as Array<keyof typeof SUBJECT_CONTENT>;
-  const grade = ((user?.grade as "8" | "9" | "10") || storedGrade || selectGrade) as "8" | "9" | "10";
+  const grade = ((storedGrade || (user?.grade as "8" | "9" | "10") || selectGrade) as "8" | "9" | "10");
 
   // small helper to get difficulty only (reuse existing map used by getContentByGrade)
   const difficultyForGrade = (g: "8" | "9" | "10") => (g === "8" ? "basic" : g === "9" ? "intermediate" : "advanced");
