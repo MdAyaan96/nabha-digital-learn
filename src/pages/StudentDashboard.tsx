@@ -316,7 +316,7 @@ function AssignmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto bg-white/10 border-white/20 text-white">
+      <DialogContent className="max-h-[85vh] overflow-y-auto bg-neutral-900 border-white/10 text-white">
         <DialogHeader>
           <DialogTitle>{content.title} • Assignment</DialogTitle>
           <DialogDescription className="text-white/80">
@@ -459,7 +459,7 @@ function QuizDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto bg-white/10 border-white/20 text-white">
+      <DialogContent className="max-h-[85vh] overflow-y-auto bg-neutral-900 border-white/10 text-white">
         <DialogHeader>
           <DialogTitle>{content.title} • Quiz</DialogTitle>
           <DialogDescription className="text-white/80">
