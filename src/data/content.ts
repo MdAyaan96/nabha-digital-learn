@@ -806,10 +806,10 @@ export const SUBJECT_CONTENT = {
   },
 };
 
-// Helper to select content by grade. Used by StudentDashboard dialogs.
 export function getContentByGrade(
   subject: keyof typeof SUBJECT_CONTENT,
-  grade: "8" | "9" | "10"
+  grade: "8" | "9" | "10",
+  unitIndex: number = 0
 ) {
   const base = SUBJECT_CONTENT[subject] as any;
   const units = (base.units as Array<any>) ?? [
@@ -822,10 +822,12 @@ export function getContentByGrade(
     },
   ];
 
-  const difficulty = grade === "8" ? "basic" : grade === "9" ? "intermediate" : "advanced";
+  const difficulty =
+    grade === "8" ? "basic" : grade === "9" ? "intermediate" : "advanced";
 
-  // Default to the first unit for dialogs
-  const unit = units[0];
+  const safeIndex = Math.min(Math.max(unitIndex, 0), units.length - 1);
+  const unit = units[safeIndex];
+
   return {
     title: base.title,
     lesson: unit.lesson,

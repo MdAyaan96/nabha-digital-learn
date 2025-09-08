@@ -88,7 +88,7 @@ export default function StudentDashboard() {
                   Welcome, {user.name}
                 </div>
               )}
-              {!user?.role || user.role !== "student" ? (
+              {!user?.role || user.role !== "student" || !(["8","9","10"] as const).includes((user?.grade as any)) ? (
                 <div className="mt-2 text-white/80">
                   <div className="flex items-center justify-center gap-3">
                     <Button
@@ -240,7 +240,7 @@ export default function StudentDashboard() {
                               </div>
 
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <LearningActions subject={s} grade={grade} />
+                                <LearningActions subject={s} grade={grade} unitIndex={idx} />
                               </div>
                             </CardContent>
                           </Card>
@@ -269,7 +269,7 @@ export default function StudentDashboard() {
   );
 }
 
-function LearningActions({ subject, grade }: { subject: keyof typeof SUBJECT_CONTENT, grade: "8" | "9" | "10" }) {
+function LearningActions({ subject, grade, unitIndex }: { subject: keyof typeof SUBJECT_CONTENT, grade: "8" | "9" | "10", unitIndex: number }) {
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
 
@@ -295,6 +295,7 @@ function LearningActions({ subject, grade }: { subject: keyof typeof SUBJECT_CON
         onOpenChange={setAssignmentOpen}
         subject={subject}
         grade={grade}
+        unitIndex={unitIndex}
       />
 
       <QuizDialog
@@ -302,6 +303,7 @@ function LearningActions({ subject, grade }: { subject: keyof typeof SUBJECT_CON
         onOpenChange={setQuizOpen}
         subject={subject}
         grade={grade}
+        unitIndex={unitIndex}
       />
     </>
   );
@@ -333,14 +335,16 @@ function AssignmentDialog({
   onOpenChange,
   subject,
   grade,
+  unitIndex,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   subject: keyof typeof SUBJECT_CONTENT;
   grade: "8" | "9" | "10";
+  unitIndex: number;
 }) {
   const submitAssignment = useMutation(api.students.submitAssignment);
-  const content = getContentByGrade(subject, grade);
+  const content = getContentByGrade(subject, grade, unitIndex);
   const questions = pickByGrade<AssignmentQuestion>(content.assignments as AssignmentQuestion[], grade);
 
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -432,14 +436,16 @@ function QuizDialog({
   onOpenChange,
   subject,
   grade,
+  unitIndex,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   subject: keyof typeof SUBJECT_CONTENT;
   grade: "8" | "9" | "10";
+  unitIndex: number;
 }) {
   const submitQuiz = useMutation(api.students.submitQuiz);
-  const content = getContentByGrade(subject, grade);
+  const content = getContentByGrade(subject, grade, unitIndex);
   const questions = pickByGrade<QuizQuestion>(content.quiz as QuizQuestion[], grade);
 
   const [selected, setSelected] = useState<Record<number, string>>({});
