@@ -48,6 +48,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth, redirectParam, user?.role]);
 
+  // Avoid flashing the Auth UI after a successful login.
+  // If already authenticated, render nothing while the redirect happens.
+  if (isAuthenticated) {
+    return null;
+  }
+
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
