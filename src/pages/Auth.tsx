@@ -36,17 +36,37 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   // Helper to decide where to go
   const getRedirectTarget = () => {
-    if (redirectParam) return redirectParam;
-    if (user?.role === "teacher") return "/teacher-dashboard";
+    // If an explicit redirect is provided, honor it but guard teacher dashboard behind setup
+    if (redirectParam) {
+      if (redirectParam.includes("/teacher-dashboard")) {
+        const needsSetup =
+          user?.role !== "teacher" ||
+          !user?.grade ||
+          !Array.isArray((user as any)?.subjects) ||
+          (user as any)?.subjects.length === 0;
+
+        return needsSetup ? "/teacher-signup" : "/teacher-dashboard";
+      }
+      return redirectParam;
+    }
+
+    // No explicit redirect: choose based on role and setup completeness
+    if (user?.role === "teacher") {
+      const ready =
+        !!user?.grade &&
+        Array.isArray((user as any)?.subjects) &&
+        (user as any)?.subjects.length > 0;
+      return ready ? "/teacher-dashboard" : "/teacher-signup";
+    }
     if (user?.role === "student") return "/student-dashboard";
-    return redirectAfterAuth || "/";
+    return redirectAfterAuth || "/student-dashboard";
   };
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       navigate(getRedirectTarget());
     }
-  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth, redirectParam, user?.role]);
+  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth, redirectParam, user?.role, user?.grade, (user as any)?.subjects]);
 
   // Avoid flashing the Auth UI after a successful login.
   // If already authenticated, render nothing while the redirect happens.
