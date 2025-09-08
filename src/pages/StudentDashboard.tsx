@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function StudentDashboard() {
   const myProgress = useQuery(api.students.getMyProgress, isAuthenticated && !!user ? {} : undefined) || [];
   const [selectGrade, setSelectGrade] = useState<"8" | "9" | "10">("8");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [lessonIndexBySubject, setLessonIndexBySubject] = useState<Record<string, number>>({});
 
   const progressBySubject = useMemo(() => {
     const map: Record<string, typeof myProgress[number]> = {};
@@ -57,6 +59,9 @@ export default function StudentDashboard() {
 
   const subjects = Object.keys(SUBJECT_CONTENT) as Array<keyof typeof SUBJECT_CONTENT>;
   const grade = (user?.grade as "8" | "9" | "10") || selectGrade;
+
+  // small helper to get difficulty only (reuse existing map used by getContentByGrade)
+  const difficultyForGrade = (g: "8" | "9" | "10") => (g === "8" ? "basic" : g === "9" ? "intermediate" : "advanced");
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -153,21 +158,65 @@ export default function StudentDashboard() {
                     </TabsList>
 
                     {subjects.map((s) => {
-                      const content = getContentByGrade(s, grade);
+                      const base = SUBJECT_CONTENT[s] as any;
+                      const units = (base.units as Array<any>) ?? [
+                        {
+                          lesson: base.lesson,
+                          notes: base.notes,
+                          videos: base.videos,
+                          assignments: base.assignments,
+                          quiz: base.quiz,
+                        },
+                      ];
+                      const idx = lessonIndexBySubject[s] ?? 0;
+                      const unit = units[Math.min(Math.max(idx, 0), units.length - 1)];
+                      const content = {
+                        title: base.title,
+                        lesson: unit.lesson,
+                        notes: unit.notes,
+                        videos: unit.videos,
+                        assignments: unit.assignments,
+                        quiz: unit.quiz,
+                        difficulty: difficultyForGrade(grade),
+                      };
                       const p = progressBySubject[s] || {
                         videosCompleted: 0,
                         assignmentsCompleted: 0,
                         quizCompleted: false,
                         notesViewed: false,
                       };
+
                       return (
                         <TabsContent key={s} value={s} className="space-y-4">
                           <Card className="glass-panel">
                             <CardHeader>
-                              <CardTitle className="text-white">{content.title} • {content.lesson}</CardTitle>
-                              <CardDescription className="text-white/70">
-                                Difficulty: {content.difficulty}
-                              </CardDescription>
+                              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <div>
+                                  <CardTitle className="text-white">{content.title} • {content.lesson}</CardTitle>
+                                  <CardDescription className="text-white/70">
+                                    Difficulty: {content.difficulty}
+                                  </CardDescription>
+                                </div>
+                                <div className="w-full md:w-60">
+                                  <Select
+                                    value={String(idx)}
+                                    onValueChange={(v) =>
+                                      setLessonIndexBySubject((prev) => ({ ...prev, [s]: Number(v) }))
+                                    }
+                                  >
+                                    <SelectTrigger className="bg-white/10 border-white/30 text-white">
+                                      <SelectValue placeholder="Select lesson" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-neutral-900 text-white border-white/20">
+                                      {units.map((u, i) => (
+                                        <SelectItem key={i} value={String(i)}>
+                                          Lesson {i + 1}: {u.lesson}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                               <div className="flex flex-wrap gap-2">
@@ -274,6 +323,10 @@ function pickByGrade<T>(items: Array<T>, grade: "8" | "9" | "10"): Array<T> {
   return items.slice(-n);
 }
 
+// Add explicit types for assignment and quiz questions to avoid 'unknown' inference
+type AssignmentQuestion = { id: number; question: string; type: string };
+type QuizQuestion = { id: number; question: string; options: string[]; correct: string };
+
 // Assignment Dialog
 function AssignmentDialog({
   open,
@@ -288,7 +341,7 @@ function AssignmentDialog({
 }) {
   const submitAssignment = useMutation(api.students.submitAssignment);
   const content = getContentByGrade(subject, grade);
-  const questions = pickByGrade(content.assignments, grade);
+  const questions = pickByGrade<AssignmentQuestion>(content.assignments as AssignmentQuestion[], grade);
 
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -387,7 +440,7 @@ function QuizDialog({
 }) {
   const submitQuiz = useMutation(api.students.submitQuiz);
   const content = getContentByGrade(subject, grade);
-  const questions = pickByGrade(content.quiz, grade);
+  const questions = pickByGrade<QuizQuestion>(content.quiz as QuizQuestion[], grade);
 
   const [selected, setSelected] = useState<Record<number, string>>({});
   const [secondsLeft, setSecondsLeft] = useState(120);
@@ -420,7 +473,7 @@ function QuizDialog({
     const m = Math.floor(s / 60);
     const r = s % 60;
     return `${m}:${r.toString().padStart(2, "0")}`;
-    };
+  };
 
   const handleSelect = (qid: number, value: string) => {
     setSelected((prev) => ({ ...prev, [qid]: value }));
@@ -488,7 +541,7 @@ function QuizDialog({
                   onValueChange={(v) => handleSelect(q.id, v)}
                   className="grid gap-2"
                 >
-                  {q.options.map((opt) => (
+                  {q.options.map((opt: string) => (
                     <label
                       key={opt}
                       className="flex items-center gap-2 rounded-md p-2 bg-white/10 border border-white/20 hover:bg-white/15 cursor-pointer"
