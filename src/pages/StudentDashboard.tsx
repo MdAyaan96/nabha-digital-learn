@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -26,10 +26,26 @@ export default function StudentDashboard() {
   const [selectGrade, setSelectGrade] = useState<"8" | "9" | "10">("8");
   const [savingProfile, setSavingProfile] = useState(false);
   const [lessonIndexBySubject, setLessonIndexBySubject] = useState<Record<string, number>>({});
+  // Hide setup screen while we auto-set the student profile from localStorage
+  const [autoSetting, setAutoSetting] = useState(false);
 
   const localName = (typeof window !== "undefined" ? localStorage.getItem("studentName") : null) || null;
   const storedGrade = (typeof window !== "undefined" ? (localStorage.getItem("studentGrade") as "8" | "9" | "10" | null) : null) || null;
   const displayName = localName || user?.name || null;
+
+  // Auto-apply "student" role/profile using grade from student login to avoid showing setup UI
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+    if (user?.role === "student") return;
+    const gradeLS = (typeof window !== "undefined" ? localStorage.getItem("studentGrade") : null) as "8" | "9" | "10" | null;
+    if (!gradeLS) return; // no saved grade; keep setup UI
+    if (autoSetting) return;
+    setAutoSetting(true);
+    const nameLS = (typeof window !== "undefined" ? localStorage.getItem("studentName") : null) || undefined;
+    const idLS = (typeof window !== "undefined" ? localStorage.getItem("studentId") : null) || undefined;
+    setStudentProfile({ grade: gradeLS, name: nameLS, studentId: idLS })
+      .finally(() => setAutoSetting(false));
+  }, [isAuthenticated, isLoading, user?.role, setStudentProfile, autoSetting]);
 
   const progressBySubject = useMemo(() => {
     const map: Record<string, typeof myProgress[number]> = {};
