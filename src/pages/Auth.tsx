@@ -24,7 +24,7 @@ interface AuthProps {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, signIn, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -34,12 +34,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper to decide where to go
+  const getRedirectTarget = () => {
+    if (redirectParam) return redirectParam;
+    if (user?.role === "teacher") return "/teacher-dashboard";
+    if (user?.role === "student") return "/student-dashboard";
+    return redirectAfterAuth || "/";
+  };
+
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      const redirect = redirectParam || "/";
-      navigate(redirect);
+      navigate(getRedirectTarget());
     }
-  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth, redirectParam]);
+  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth, redirectParam, user?.role]);
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,8 +78,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       console.log("signed in");
 
-      const redirect = redirectParam || "/";
-      navigate(redirect);
+      navigate(getRedirectTarget());
+
     } catch (error) {
       console.error("OTP verification error:", error);
 
@@ -90,8 +97,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       console.log("Attempting anonymous sign in...");
       await signIn("anonymous");
       console.log("Anonymous sign in successful");
-      const redirect = redirectParam || "/";
-      navigate(redirect);
+      navigate(getRedirectTarget());
     } catch (error) {
       console.error("Guest login error:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
