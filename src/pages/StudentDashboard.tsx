@@ -142,7 +142,11 @@ export default function StudentDashboard() {
                   <Tabs defaultValue={subjects[0]} className="w-full">
                     <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 glass-tabs">
                       {subjects.map((s) => (
-                        <TabsTrigger key={s} value={s} className="text-white">
+                        <TabsTrigger
+                          key={s}
+                          value={s}
+                          className="text-white/80 hover:text-white border border-transparent rounded-md backdrop-blur-sm data-[state=active]:bg-white/20 data-[state=active]:text-white data-[state=active]:border-white/30"
+                        >
                           {SUBJECT_CONTENT[s].icon} {SUBJECT_CONTENT[s].title}
                         </TabsTrigger>
                       ))}
