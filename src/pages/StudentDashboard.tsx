@@ -27,6 +27,10 @@ export default function StudentDashboard() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [lessonIndexBySubject, setLessonIndexBySubject] = useState<Record<string, number>>({});
 
+  const localName = (typeof window !== "undefined" ? localStorage.getItem("studentName") : null) || null;
+  const storedGrade = (typeof window !== "undefined" ? (localStorage.getItem("studentGrade") as "8" | "9" | "10" | null) : null) || null;
+  const displayName = localName || user?.name || null;
+
   const progressBySubject = useMemo(() => {
     const map: Record<string, typeof myProgress[number]> = {};
     for (const p of myProgress) map[p.subject] = p as any;
@@ -58,7 +62,7 @@ export default function StudentDashboard() {
   };
 
   const subjects = Object.keys(SUBJECT_CONTENT) as Array<keyof typeof SUBJECT_CONTENT>;
-  const grade = (user?.grade as "8" | "9" | "10") || selectGrade;
+  const grade = ((user?.grade as "8" | "9" | "10") || storedGrade || selectGrade) as "8" | "9" | "10";
 
   // small helper to get difficulty only (reuse existing map used by getContentByGrade)
   const difficultyForGrade = (g: "8" | "9" | "10") => (g === "8" ? "basic" : g === "9" ? "intermediate" : "advanced");
@@ -83,9 +87,9 @@ export default function StudentDashboard() {
                 <GraduationCap className="h-7 w-7" />
               </div>
               <CardTitle className="text-white text-2xl">Student Dashboard</CardTitle>
-              {user?.name && (
+              {displayName && (
                 <div className="mt-1 text-white/80">
-                  Welcome, {user.name}
+                  Welcome, {displayName}
                 </div>
               )}
               {!user?.role || user.role !== "student" || !(["8","9","10"] as const).includes((user?.grade as any)) ? (
