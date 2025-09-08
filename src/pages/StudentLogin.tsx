@@ -6,17 +6,24 @@ import { GraduationCap, Loader2, LogIn } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function StudentLogin() {
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [grade, setGrade] = useState<"8" | "9" | "10" | "">("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !studentId.trim()) {
       toast.error("Please enter your Name and Student ID");
+      return;
+    }
+    // Require grade before proceeding
+    if (!grade) {
+      toast.error("Please select your Grade");
       return;
     }
 
@@ -30,6 +37,8 @@ export default function StudentLogin() {
       localStorage.setItem("studentId", studentId);
       localStorage.setItem("studentName", name);
       localStorage.setItem("userRole", "student");
+      // Persist selected grade for downstream usage
+      localStorage.setItem("studentGrade", grade);
       
       toast.success("Login successful!");
       navigate("/student-dashboard");
@@ -86,6 +95,22 @@ export default function StudentLogin() {
                     className="backdrop-blur-sm bg-white/10 border-white/30 text-white placeholder:text-white/60 focus:border-white/50"
                     disabled={isLoading}
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/90">Grade</label>
+                  <Select
+                    value={grade}
+                    onValueChange={(v) => setGrade(v as "8" | "9" | "10")}
+                  >
+                    <SelectTrigger className="backdrop-blur-sm bg-white/10 border-white/30 text-white">
+                      <SelectValue placeholder="Select your Grade" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-neutral-900 text-white border-white/20">
+                      <SelectItem value="8">Grade 8</SelectItem>
+                      <SelectItem value="9">Grade 9</SelectItem>
+                      <SelectItem value="10">Grade 10</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/90">Student ID</label>
