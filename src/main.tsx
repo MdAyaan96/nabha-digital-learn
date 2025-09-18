@@ -16,7 +16,10 @@ import StudentDashboard from "@/pages/StudentDashboard.tsx";
 import TeacherDashboard from "@/pages/TeacherDashboard.tsx";
 import "./types/global.d.ts";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+// Use a safe fallback Convex URL if the env var isn't provided to avoid calling the site origin.
+const CONVEX_URL =
+  (import.meta.env.VITE_CONVEX_URL as string) || "https://harmless-tapir-303.convex.cloud";
+const convex = new ConvexReactClient(CONVEX_URL);
 
 function RouteSyncer() {
   const location = useLocation();
